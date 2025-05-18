@@ -1,6 +1,7 @@
 
 import { createContext, useState, useContext, ReactNode, useEffect } from "react";
-import { Message, messages as initialMessages } from "@/lib/data";
+import { Message } from "@/types";
+import { messages as initialMessages } from "@/lib/data";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "./AuthContext";
 

@@ -1,9 +1,9 @@
 
 import { createContext, useState, useContext, ReactNode, useEffect } from "react";
-import { Friend, friends as initialFriends } from "@/lib/data";
+import { Friend } from "@/types";
+import { friends as initialFriends, users } from "@/lib/data";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "./AuthContext";
-import { users } from "@/lib/data";
 import { User } from "@/types";
 
 interface FriendContextType {

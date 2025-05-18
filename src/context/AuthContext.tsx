@@ -1,6 +1,7 @@
 
 import { createContext, useState, useContext, ReactNode } from "react";
-import { User, users } from "@/lib/data";
+import { User } from "@/types";
+import { users } from "@/lib/data";
 import { useToast } from "@/hooks/use-toast";
 
 interface AuthContextType {
