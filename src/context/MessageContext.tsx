@@ -1,35 +1,67 @@
 
 import { createContext, useState, useContext, ReactNode, useEffect } from "react";
-import { Message } from "@/types";
-import { messages as initialMessages } from "@/lib/data";
+import { Message, User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "./AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MessageContextType {
   messages: Message[];
-  sendMessage: (text: string, recipientId?: string) => void;
-  deleteMessage: (id: string) => void;
+  loading: boolean;
+  sendMessage: (text: string, recipientId?: string) => Promise<void>;
+  deleteMessage: (id: string) => Promise<void>;
   getPublicMessages: () => Message[];
   getPrivateMessagesByUser: (userId: string) => Message[];
+  refreshMessages: () => Promise<void>;
 }
 
 const MessageContext = createContext<MessageContextType | undefined>(undefined);
 
 export function MessageProvider({ children }: { children: ReactNode }) {
-  const [messages, setMessages] = useState<Message[]>(() => {
-    const savedMessages = localStorage.getItem("nestconnect-messages");
-    return savedMessages ? JSON.parse(savedMessages) : initialMessages;
-  });
-  
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { currentUser } = useAuth();
-  
-  // Save messages to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem("nestconnect-messages", JSON.stringify(messages));
-  }, [messages]);
 
-  const sendMessage = (text: string, recipientId?: string) => {
+  const fetchMessages = async () => {
+    if (!currentUser) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .select(`
+          id,
+          text,
+          sender_id,
+          recipient_id,
+          is_private,
+          is_read,
+          created_at,
+          updated_at
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      setMessages(data || []);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const refreshMessages = async () => {
+    await fetchMessages();
+  };
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchMessages();
+    }
+  }, [currentUser]);
+
+  const sendMessage = async (text: string, recipientId?: string) => {
     if (!currentUser) {
       toast({
         title: "Error",
@@ -39,83 +71,89 @@ export function MessageProvider({ children }: { children: ReactNode }) {
       return;
     }
     
-    const newMessage: Message = {
-      id: `${Date.now()}`,
-      text,
-      senderId: currentUser.id,
-      recipientId,
-      timestamp: new Date().toISOString(),
-      isPrivate: !!recipientId,
-      isRead: false,
-    };
-    
-    setMessages((prevMessages) => [...prevMessages, newMessage]);
-    
-    toast({
-      title: "Message Sent",
-      description: recipientId ? "Private message sent successfully" : "Message posted successfully",
-    });
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .insert({
+          text,
+          sender_id: currentUser.id,
+          recipient_id: recipientId,
+          is_private: !!recipientId,
+          is_read: false
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      // Add the new message to the local state
+      setMessages(prev => [data, ...prev]);
+      
+      toast({
+        title: "Message Sent",
+        description: recipientId ? "Private message sent successfully" : "Message posted successfully",
+      });
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send message",
+        variant: "destructive",
+      });
+    }
   };
 
-  const deleteMessage = (id: string) => {
+  const deleteMessage = async (id: string) => {
     if (!currentUser) return;
     
-    const message = messages.find((m) => m.id === id);
-    
-    if (!message) {
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      setMessages(prev => prev.filter(m => m.id !== id));
+      
+      toast({
+        title: "Message Deleted",
+        description: "Message has been deleted",
+      });
+    } catch (error) {
+      console.error('Error deleting message:', error);
       toast({
         title: "Error",
-        description: "Message not found",
+        description: "Failed to delete message",
         variant: "destructive",
       });
-      return;
     }
-    
-    // Only allow the sender or recipient to delete the message
-    if (message.senderId !== currentUser.id && message.recipientId !== currentUser.id) {
-      toast({
-        title: "Error",
-        description: "You don't have permission to delete this message",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setMessages((prevMessages) => prevMessages.filter((m) => m.id !== id));
-    
-    toast({
-      title: "Message Deleted",
-      description: "Message has been deleted",
-    });
   };
 
   const getPublicMessages = () => {
-    return messages
-      .filter((message) => !message.isPrivate)
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    return messages.filter(message => !message.is_private);
   };
 
   const getPrivateMessagesByUser = (userId: string) => {
     if (!currentUser) return [];
     
-    return messages
-      .filter((message) => (
-        // Show messages between the current user and the specified user
-        message.isPrivate && (
-          (message.senderId === currentUser.id && message.recipientId === userId) || 
-          (message.senderId === userId && message.recipientId === currentUser.id)
-        )
-      ))
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    return messages.filter(message => 
+      message.is_private && (
+        (message.sender_id === currentUser.id && message.recipient_id === userId) || 
+        (message.sender_id === userId && message.recipient_id === currentUser.id)
+      )
+    );
   };
 
   return (
     <MessageContext.Provider value={{ 
       messages, 
+      loading,
       sendMessage, 
       deleteMessage, 
       getPublicMessages, 
-      getPrivateMessagesByUser 
+      getPrivateMessagesByUser,
+      refreshMessages
     }}>
       {children}
     </MessageContext.Provider>

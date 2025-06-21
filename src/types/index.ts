@@ -5,25 +5,30 @@ export interface User {
   email: string;
   name: string;
   avatar: string;
-  role: string;
-  aboutMe: string;
+  role: 'Employee' | 'Manager' | 'Admin';
+  about_me: string;
   department: string;
   joined: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Friend {
   id: string;
+  user_id: string;
+  friend_id: string;
   status: "pending" | "accepted" | "rejected";
-  userId: string;
-  friendId: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Message {
   id: string;
   text: string;
-  senderId: string;
-  recipientId?: string;
-  timestamp: string;
-  isPrivate: boolean;
-  isRead: boolean;
+  sender_id: string;
+  recipient_id?: string;
+  is_private: boolean;
+  is_read: boolean;
+  created_at: string;
+  updated_at?: string;
 }

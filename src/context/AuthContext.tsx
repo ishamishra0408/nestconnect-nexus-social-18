@@ -1,54 +1,115 @@
 
-import { createContext, useState, useContext, ReactNode } from "react";
+import { createContext, useState, useContext, ReactNode, useEffect } from "react";
 import { User } from "@/types";
-import { users } from "@/lib/data";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Session, User as SupabaseUser } from "@supabase/supabase-js";
 
 interface AuthContextType {
   currentUser: User | null;
   isAuthenticated: boolean;
+  loading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   signup: (username: string, email: string, name: string, password: string) => Promise<boolean>;
   logout: () => void;
-  updateProfile: (profile: Partial<User>) => void;
+  updateProfile: (profile: Partial<User>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<User | null>(() => {
-    const savedUser = localStorage.getItem("nestconnect-user");
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   
   const isAuthenticated = !!currentUser;
 
+  // Fetch user profile from database
+  const fetchUserProfile = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+    
+    if (error) {
+      console.error('Error fetching profile:', error);
+      return null;
+    }
+    
+    return {
+      id: data.id,
+      username: data.username,
+      email: data.email,
+      name: data.name,
+      avatar: data.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.username}`,
+      role: data.role as 'Employee' | 'Manager' | 'Admin',
+      about_me: data.about_me || '',
+      department: data.department || 'General',
+      joined: data.joined || new Date().toISOString().split('T')[0],
+      created_at: data.created_at,
+      updated_at: data.updated_at
+    } as User;
+  };
+
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        fetchUserProfile(session.user.id).then(profile => {
+          setCurrentUser(profile);
+          setLoading(false);
+        });
+      } else {
+        setLoading(false);
+      }
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          const profile = await fetchUserProfile(session.user.id);
+          setCurrentUser(profile);
+        } else {
+          setCurrentUser(null);
+        }
+        setLoading(false);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   const login = async (email: string, password: string): Promise<boolean> => {
-    // In a real app, this would be an API call to validate credentials
     try {
-      const user = users.find((u) => u.email === email);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
       
-      if (!user) {
+      if (error) {
         toast({
           title: "Login Failed",
-          description: "Invalid email or password",
+          description: error.message,
           variant: "destructive",
         });
         return false;
       }
       
-      // In a real app, we would validate the password here
+      if (data.user) {
+        const profile = await fetchUserProfile(data.user.id);
+        if (profile) {
+          setCurrentUser(profile);
+          toast({
+            title: "Login Successful",
+            description: `Welcome back, ${profile.name}!`,
+          });
+          return true;
+        }
+      }
       
-      setCurrentUser(user);
-      localStorage.setItem("nestconnect-user", JSON.stringify(user));
-      
-      toast({
-        title: "Login Successful",
-        description: `Welcome back, ${user.name}!`,
-      });
-      
-      return true;
+      return false;
     } catch (error) {
       console.error("Login error:", error);
       toast({
@@ -61,46 +122,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signup = async (username: string, email: string, name: string, password: string): Promise<boolean> => {
-    // In a real app, this would be an API call to create a new user
     try {
-      // Check if user with email already exists
-      const existingUser = users.find((u) => u.email === email || u.username === username);
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            username,
+            name,
+            full_name: name
+          },
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
       
-      if (existingUser) {
+      if (error) {
         toast({
           title: "Signup Failed",
-          description: "Email or username already exists",
+          description: error.message,
           variant: "destructive",
         });
         return false;
       }
       
-      // Create new user
-      const newUser: User = {
-        id: `${users.length + 1}`,
-        username,
-        email,
-        name,
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`,
-        role: "Employee",
-        aboutMe: "",
-        department: "General",
-        joined: new Date().toISOString().split('T')[0]
-      };
+      if (data.user) {
+        toast({
+          title: "Signup Successful",
+          description: `Welcome to NestConnect, ${name}! Please check your email to verify your account.`,
+        });
+        return true;
+      }
       
-      // In a real app, we would save the user to the database
-      // For now, we'll just update our local array and localStorage
-      users.push(newUser);
-      
-      setCurrentUser(newUser);
-      localStorage.setItem("nestconnect-user", JSON.stringify(newUser));
-      
-      toast({
-        title: "Signup Successful",
-        description: `Welcome to NestConnect, ${newUser.name}!`,
-      });
-      
-      return true;
+      return false;
     } catch (error) {
       console.error("Signup error:", error);
       toast({
@@ -112,36 +165,62 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Error logging out:', error);
+    }
     setCurrentUser(null);
-    localStorage.removeItem("nestconnect-user");
     toast({
       title: "Logged Out",
       description: "You have been successfully logged out",
     });
   };
 
-  const updateProfile = (profile: Partial<User>) => {
+  const updateProfile = async (profile: Partial<User>) => {
     if (!currentUser) return;
     
-    const updatedUser = { ...currentUser, ...profile };
-    setCurrentUser(updatedUser);
-    localStorage.setItem("nestconnect-user", JSON.stringify(updatedUser));
-    
-    // Update the user in our dummy data array
-    const userIndex = users.findIndex(u => u.id === currentUser.id);
-    if (userIndex >= 0) {
-      users[userIndex] = updatedUser;
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          about_me: profile.about_me,
+          role: profile.role,
+          department: profile.department,
+          name: profile.name,
+          avatar: profile.avatar
+        })
+        .eq('id', currentUser.id);
+      
+      if (error) throw error;
+      
+      const updatedUser = { ...currentUser, ...profile };
+      setCurrentUser(updatedUser);
+      
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been successfully updated",
+      });
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast({
+        title: "Update Failed",
+        description: "Failed to update profile",
+        variant: "destructive",
+      });
     }
-    
-    toast({
-      title: "Profile Updated",
-      description: "Your profile has been successfully updated",
-    });
   };
 
   return (
-    <AuthContext.Provider value={{ currentUser, isAuthenticated, login, signup, logout, updateProfile }}>
+    <AuthContext.Provider value={{ 
+      currentUser, 
+      isAuthenticated, 
+      loading,
+      login, 
+      signup, 
+      logout, 
+      updateProfile 
+    }}>
       {children}
     </AuthContext.Provider>
   );

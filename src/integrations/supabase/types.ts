@@ -9,7 +9,138 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      friends: {
+        Row: {
+          created_at: string | null
+          friend_id: string
+          id: string
+          status: Database["public"]["Enums"]["friend_status"] | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          friend_id: string
+          id?: string
+          status?: Database["public"]["Enums"]["friend_status"] | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          friend_id?: string
+          id?: string
+          status?: Database["public"]["Enums"]["friend_status"] | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "friends_friend_id_fkey"
+            columns: ["friend_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friends_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_private: boolean | null
+          is_read: boolean | null
+          recipient_id: string | null
+          sender_id: string
+          text: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_private?: boolean | null
+          is_read?: boolean | null
+          recipient_id?: string | null
+          sender_id: string
+          text: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_private?: boolean | null
+          is_read?: boolean | null
+          recipient_id?: string | null
+          sender_id?: string
+          text?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          about_me: string | null
+          avatar: string | null
+          created_at: string | null
+          department: string | null
+          email: string
+          id: string
+          joined: string | null
+          name: string
+          role: Database["public"]["Enums"]["user_role"] | null
+          updated_at: string | null
+          username: string
+        }
+        Insert: {
+          about_me?: string | null
+          avatar?: string | null
+          created_at?: string | null
+          department?: string | null
+          email: string
+          id: string
+          joined?: string | null
+          name: string
+          role?: Database["public"]["Enums"]["user_role"] | null
+          updated_at?: string | null
+          username: string
+        }
+        Update: {
+          about_me?: string | null
+          avatar?: string | null
+          created_at?: string | null
+          department?: string | null
+          email?: string
+          id?: string
+          joined?: string | null
+          name?: string
+          role?: Database["public"]["Enums"]["user_role"] | null
+          updated_at?: string | null
+          username?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +149,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      friend_status: "pending" | "accepted" | "rejected"
+      user_role: "Employee" | "Manager" | "Admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +265,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      friend_status: ["pending", "accepted", "rejected"],
+      user_role: ["Employee", "Manager", "Admin"],
+    },
   },
 } as const

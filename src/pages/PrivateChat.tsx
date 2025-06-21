@@ -4,18 +4,56 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageList } from "@/components/messages/MessageList";
 import { MessageComposer } from "@/components/messages/MessageComposer";
 import { useMessages } from "@/context/MessageContext";
-import { users } from "@/lib/data";
 import { useParams, Navigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { User } from "@/types";
+import { supabase } from "@/integrations/supabase/client";
 
 const PrivateChat = () => {
   const { userId } = useParams();
   const { getPrivateMessagesByUser } = useMessages();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   
-  if (!userId) {
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (!userId) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+        
+        if (error) throw error;
+        
+        setUser({
+          id: data.id,
+          username: data.username,
+          email: data.email,
+          name: data.name,
+          avatar: data.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.username}`,
+          role: data.role,
+          about_me: data.about_me || '',
+          department: data.department || 'General',
+          joined: data.joined || new Date().toISOString().split('T')[0],
+          created_at: data.created_at,
+          updated_at: data.updated_at
+        });
+      } catch (error) {
+        console.error('Error fetching user:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchUser();
+  }, [userId]);
+  
+  if (!userId || loading) {
     return <Navigate to="/messages" replace />;
   }
-  
-  const user = users.find(u => u.id === userId);
   
   if (!user) {
     return <Navigate to="/messages" replace />;

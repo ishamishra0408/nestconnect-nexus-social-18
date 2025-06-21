@@ -6,13 +6,27 @@ import { FriendList } from "@/components/friends/FriendList";
 import { FriendRequestList } from "@/components/friends/FriendRequestList";
 import { UserList } from "@/components/friends/UserList";
 import { useFriends } from "@/context/FriendContext";
-import { users } from "@/lib/data";
+import { useUsers } from "@/hooks/useUsers";
+import { useState, useEffect } from "react";
 
 const Friends = () => {
-  const { getFriends, getPendingRequests } = useFriends();
-  
-  const friends = getFriends();
-  const pendingRequests = getPendingRequests();
+  const { getPendingRequests } = useFriends();
+  const { users } = useUsers();
+  const [friends, setFriends] = useState([]);
+  const [pendingRequests, setPendingRequests] = useState([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      const [friendsData, requestsData] = await Promise.all([
+        useFriends().getFriends(),
+        getPendingRequests()
+      ]);
+      setFriends(friendsData);
+      setPendingRequests(requestsData);
+    };
+    
+    loadData();
+  }, []);
 
   return (
     <MainLayout>

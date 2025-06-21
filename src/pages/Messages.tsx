@@ -6,25 +6,31 @@ import { MessageList } from "@/components/messages/MessageList";
 import { MessageComposer } from "@/components/messages/MessageComposer";
 import { useMessages } from "@/context/MessageContext";
 import { useFriends } from "@/context/FriendContext";
-import { users } from "@/lib/data";
 import { User } from "@/types";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
 const Messages = () => {
-  const { getPublicMessages } = useMessages();
+  const { getPublicMessages, getPrivateMessagesByUser } = useMessages();
   const { getFriends } = useFriends();
   
   const publicMessages = getPublicMessages();
-  const friends = getFriends();
-  
+  const [friends, setFriends] = useState<User[]>([]);
   const [selectedFriend, setSelectedFriend] = useState<User | null>(null);
-  const { getPrivateMessagesByUser } = useMessages();
   
   const privateMessages = selectedFriend 
     ? getPrivateMessagesByUser(selectedFriend.id)
     : [];
+
+  useEffect(() => {
+    const loadFriends = async () => {
+      const friendsData = await getFriends();
+      setFriends(friendsData);
+    };
+    
+    loadFriends();
+  }, []);
 
   return (
     <MainLayout>
