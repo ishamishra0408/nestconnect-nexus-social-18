@@ -1,4 +1,3 @@
-
 import { User } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,10 +15,7 @@ export function UserList({ users }: UserListProps) {
   
   if (!currentUser) return null;
   
-  // Filter out current user
-  const filteredUsers = users.filter(user => user.id !== currentUser.id);
-  
-  if (filteredUsers.length === 0) {
+  if (users.length === 0) {
     return (
       <div className="text-center py-10 text-gray-500">
         <p>No users found</p>
@@ -29,7 +25,7 @@ export function UserList({ users }: UserListProps) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {filteredUsers.map((user) => {
+      {users.map((user) => {
         const friendStatus = getFriendStatus(user.id);
         
         return (
