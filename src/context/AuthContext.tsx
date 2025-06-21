@@ -53,18 +53,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        try {
-          if (session?.user) {
-            const profile = await fetchUserProfile(session.user.id);
-            setCurrentUser(profile);
-          } else {
-            setCurrentUser(null);
-          }
-        } catch (error) {
-          console.error("Error in onAuthStateChange:", error)
+      (_event, session) => {
+        if (session?.user) {
+          setTimeout(() => {
+            (async () => {
+              try {
+                const profile = await fetchUserProfile(session.user.id);
+                setCurrentUser(profile);
+              } catch (error) {
+                console.error("Error in onAuthStateChange timeout:", error);
+                setCurrentUser(null);
+              } finally {
+                setLoading(false);
+              }
+            })();
+          }, 0);
+        } else {
           setCurrentUser(null);
-        } finally {
           setLoading(false);
         }
       }
