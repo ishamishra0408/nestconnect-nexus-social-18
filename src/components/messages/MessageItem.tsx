@@ -1,17 +1,14 @@
-
 import { Message, User } from "@/types";
 import { formatDistanceToNow } from "date-fns";
 
 interface MessageItemProps {
   message: Message;
   currentUser: User;
-  users: User[];
   onMarkAsRead?: (messageId: string) => void;
 }
 
-export function MessageItem({ message, currentUser, users, onMarkAsRead }: MessageItemProps) {
-  const sender = users.find(u => u.id === message.sender_id);
-  const recipient = message.recipient_id ? users.find(u => u.id === message.recipient_id) : null;
+export function MessageItem({ message, currentUser, onMarkAsRead }: MessageItemProps) {
+  const sender = message.sender;
   
   const isOwnMessage = message.sender_id === currentUser.id;
   const isPrivateMessage = message.is_private;
@@ -41,9 +38,9 @@ export function MessageItem({ message, currentUser, users, onMarkAsRead }: Messa
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <span className="font-medium text-gray-900">{sender?.name || 'Unknown User'}</span>
-              {isPrivateMessage && recipient && (
+              {isPrivateMessage && (
                 <span className="text-sm text-gray-500">
-                  → {message.recipient_id === currentUser.id ? 'You' : recipient.name}
+                  → {message.recipient_id === currentUser.id ? 'You' : 'recipient name'}
                 </span>
               )}
               {isPrivateMessage && (

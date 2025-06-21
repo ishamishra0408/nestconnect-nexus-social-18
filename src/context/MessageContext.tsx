@@ -1,4 +1,3 @@
-
 import { createContext, useState, useContext, ReactNode, useEffect } from "react";
 import { Message, User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
@@ -30,14 +29,13 @@ export function MessageProvider({ children }: { children: ReactNode }) {
       const { data, error } = await supabase
         .from('messages')
         .select(`
-          id,
-          text,
-          sender_id,
-          recipient_id,
-          is_private,
-          is_read,
-          created_at,
-          updated_at
+          *,
+          sender:profiles!sender_id (
+            id,
+            username,
+            name,
+            avatar
+          )
         `)
         .order('created_at', { ascending: false });
       
@@ -86,8 +84,8 @@ export function MessageProvider({ children }: { children: ReactNode }) {
       
       if (error) throw error;
       
-      // Add the new message to the local state
-      setMessages(prev => [data, ...prev]);
+      const newMessage = { ...data, sender: currentUser };
+      setMessages(prev => [newMessage, ...prev]);
       
       toast({
         title: "Message Sent",

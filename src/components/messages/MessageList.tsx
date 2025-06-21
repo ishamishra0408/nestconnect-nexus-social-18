@@ -1,4 +1,3 @@
-
 import { Message, User } from "@/types";
 import { MessageItem } from "./MessageItem";
 import { useAuth } from "@/context/AuthContext";
@@ -36,7 +35,6 @@ export function MessageList({ messages, emptyMessage = "No messages yet" }: Mess
           key={message.id} 
           message={message} 
           currentUser={currentUser}
-          users={users}
         />
       ))}
     </div>
