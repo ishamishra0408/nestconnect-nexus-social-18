@@ -1,4 +1,3 @@
-
 import { createContext, useState, useContext, ReactNode, useEffect } from "react";
 import { Friend, User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
@@ -22,7 +21,7 @@ const FriendContext = createContext<FriendContextType | undefined>(undefined);
 
 export function FriendProvider({ children }: { children: ReactNode }) {
   const [friends, setFriends] = useState<Friend[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [requestLoading, setRequestLoading] = useState(false);
   const { toast } = useToast();
   const { currentUser } = useAuth();
 
@@ -40,8 +39,6 @@ export function FriendProvider({ children }: { children: ReactNode }) {
       setFriends(data || []);
     } catch (error) {
       console.error('Error fetching friends:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -56,8 +53,23 @@ export function FriendProvider({ children }: { children: ReactNode }) {
   }, [currentUser]);
 
   const sendFriendRequest = async (friendId: string) => {
-    if (!currentUser) return;
-    
+    if (!currentUser || requestLoading) return;
+
+    const existingFriendship = friends.find(f =>
+      (f.user_id === currentUser.id && f.friend_id === friendId) ||
+      (f.user_id === friendId && f.friend_id === currentUser.id)
+    );
+
+    if (existingFriendship) {
+      toast({
+        title: "Request already sent",
+        description: "You have already sent or received a request from this user.",
+        variant: "default",
+      });
+      return;
+    }
+
+    setRequestLoading(true);
     try {
       const { data, error } = await supabase
         .from('friends')
@@ -84,6 +96,8 @@ export function FriendProvider({ children }: { children: ReactNode }) {
         description: "Failed to send friend request",
         variant: "destructive",
       });
+    } finally {
+      setRequestLoading(false);
     }
   };
 
@@ -272,7 +286,7 @@ export function FriendProvider({ children }: { children: ReactNode }) {
   return (
     <FriendContext.Provider value={{ 
       friends, 
-      loading,
+      loading: requestLoading,
       sendFriendRequest, 
       acceptFriendRequest, 
       rejectFriendRequest, 

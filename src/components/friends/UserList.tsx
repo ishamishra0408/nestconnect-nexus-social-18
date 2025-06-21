@@ -11,7 +11,7 @@ interface UserListProps {
 
 export function UserList({ users }: UserListProps) {
   const { currentUser } = useAuth();
-  const { getFriendStatus, sendFriendRequest } = useFriends();
+  const { getFriendStatus, sendFriendRequest, loading } = useFriends();
   
   if (!currentUser) return null;
   
@@ -53,6 +53,7 @@ export function UserList({ users }: UserListProps) {
                     size="sm"
                     variant="outline"
                     onClick={() => sendFriendRequest(user.id)}
+                    disabled={loading}
                   >
                     Add Friend
                   </Button>
