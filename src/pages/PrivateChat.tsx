@@ -1,9 +1,8 @@
-
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageList } from "@/components/messages/MessageList";
 import { MessageComposer } from "@/components/messages/MessageComposer";
-import { useMessages } from "@/context/MessageContext";
+import { useMessages } from "@/hooks/useMessages";
 import { useParams, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { User } from "@/types";

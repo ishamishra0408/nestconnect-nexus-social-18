@@ -1,8 +1,7 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { useMessages } from "@/context/MessageContext";
+import { useMessages } from "@/hooks/useMessages";
 
 interface MessageComposerProps {
   recipientId?: string;

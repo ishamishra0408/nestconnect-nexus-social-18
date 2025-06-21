@@ -1,9 +1,8 @@
-
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useAuth } from "@/context/AuthContext";
 import { MessageComposer } from "@/components/messages/MessageComposer";
 import { MessageList } from "@/components/messages/MessageList";
-import { useMessages } from "@/context/MessageContext";
+import { useMessages } from "@/hooks/useMessages";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Home = () => {

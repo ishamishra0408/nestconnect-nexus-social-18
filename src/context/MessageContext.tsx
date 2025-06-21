@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "./AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
-interface MessageContextType {
+export interface MessageContextType {
   messages: Message[];
   loading: boolean;
   sendMessage: (text: string, recipientId?: string) => Promise<void>;
@@ -14,7 +14,7 @@ interface MessageContextType {
   refreshMessages: () => Promise<void>;
 }
 
-const MessageContext = createContext<MessageContextType | undefined>(undefined);
+export const MessageContext = createContext<MessageContextType | undefined>(undefined);
 
 export function MessageProvider({ children }: { children: ReactNode }) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -156,12 +156,4 @@ export function MessageProvider({ children }: { children: ReactNode }) {
       {children}
     </MessageContext.Provider>
   );
-}
-
-export function useMessages() {
-  const context = useContext(MessageContext);
-  if (context === undefined) {
-    throw new Error("useMessages must be used within a MessageProvider");
-  }
-  return context;
 }

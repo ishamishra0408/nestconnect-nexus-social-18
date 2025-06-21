@@ -1,4 +1,3 @@
-
 import { createContext, useState, useContext, ReactNode, useEffect } from "react";
 import { User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
@@ -53,32 +52,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        fetchUserProfile(session.user.id).then(profile => {
-          setCurrentUser(profile);
-          setLoading(false);
-        });
-      } else {
-        setLoading(false);
-      }
-    });
-
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.user) {
-          const profile = await fetchUserProfile(session.user.id);
-          setCurrentUser(profile);
-        } else {
+      async (_event, session) => {
+        try {
+          if (session?.user) {
+            const profile = await fetchUserProfile(session.user.id);
+            setCurrentUser(profile);
+          } else {
+            setCurrentUser(null);
+          }
+        } catch (error) {
+          console.error("Error in onAuthStateChange:", error)
           setCurrentUser(null);
+        } finally {
+          setLoading(false);
         }
-        setLoading(false);
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
@@ -185,9 +179,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from('profiles')
         .update({
           about_me: profile.about_me,
-          role: profile.role,
+          role: profile.role as 'Employee' | 'Manager' | 'Admin',
           department: profile.department,
           name: profile.name,
+          username: profile.username,
           avatar: profile.avatar
         })
         .eq('id', currentUser.id);
