@@ -58,68 +58,72 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-const AppRoutes = () => (
-  <Routes>
-    <Route path="/login" element={
-      <PublicRoute>
-        <Login />
-      </PublicRoute>
-    } />
-    <Route path="/signup" element={
-      <PublicRoute>
-        <Signup />
-      </PublicRoute>
-    } />
-    <Route path="/" element={
-      <ProtectedRoute>
-        <Home />
-      </ProtectedRoute>
-    } />
-    <Route path="/profile" element={
-      <ProtectedRoute>
-        <Profile />
-      </ProtectedRoute>
-    } />
-    <Route path="/profile/:userId" element={
-      <ProtectedRoute>
-        <UserProfile />
-      </ProtectedRoute>
-    } />
-    <Route path="/messages" element={
-      <ProtectedRoute>
-        <Messages />
-      </ProtectedRoute>
-    } />
-    <Route path="/messages/:userId" element={
-      <ProtectedRoute>
-        <PrivateChat />
-      </ProtectedRoute>
-    } />
-    <Route path="/friends" element={
-      <ProtectedRoute>
-        <Friends />
-      </ProtectedRoute>
-    } />
-    <Route path="*" element={<NotFound />} />
-  </Routes>
-);
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/login" element={
+        <PublicRoute>
+          <Login />
+        </PublicRoute>
+      } />
+      <Route path="/signup" element={
+        <PublicRoute>
+          <Signup />
+        </PublicRoute>
+      } />
+      <Route path="/" element={
+        <ProtectedRoute>
+          <Home />
+        </ProtectedRoute>
+      } />
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <Profile />
+        </ProtectedRoute>
+      } />
+      <Route path="/profile/:userId" element={
+        <ProtectedRoute>
+          <UserProfile />
+        </ProtectedRoute>
+      } />
+      <Route path="/messages" element={
+        <ProtectedRoute>
+          <Messages />
+        </ProtectedRoute>
+      } />
+      <Route path="/messages/:userId" element={
+        <ProtectedRoute>
+          <PrivateChat />
+        </ProtectedRoute>
+      } />
+      <Route path="/friends" element={
+        <ProtectedRoute>
+          <Friends />
+        </ProtectedRoute>
+      } />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+}
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <AuthProvider>
-        <FriendProvider>
-          <MessageProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <AppRoutes />
-            </BrowserRouter>
-          </MessageProvider>
-        </FriendProvider>
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <FriendProvider>
+              <MessageProvider>
+                <Toaster />
+                <Sonner />
+                <AppRoutes />
+              </MessageProvider>
+            </FriendProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

@@ -3,18 +3,27 @@ import { useAuth } from "@/context/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Home, Mail, MessageSquare, Users, User, LogOut } from "lucide-react";
 import { useFriends } from "@/context/FriendContext";
+import { useState, useEffect } from "react";
 
 export function Sidebar() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { getPendingRequests } = useFriends();
+  const [pendingCount, setPendingCount] = useState(0);
   
-  const pendingRequests = getPendingRequests();
+  useEffect(() => {
+    const loadPendingRequests = async () => {
+      const requests = await getPendingRequests();
+      setPendingCount(requests.length);
+    };
+    
+    loadPendingRequests();
+  }, [getPendingRequests]);
 
   const navigationItems = [
     { path: "/", label: "Home", icon: <Home className="h-5 w-5" /> },
-    { path: "/friends", label: "Friends", icon: <Users className="h-5 w-5" />, badge: pendingRequests.length },
+    { path: "/friends", label: "Friends", icon: <Users className="h-5 w-5" />, badge: pendingCount },
     { path: "/messages", label: "Messages", icon: <MessageSquare className="h-5 w-5" /> },
     { path: "/profile", label: "Profile", icon: <User className="h-5 w-5" /> },
   ];

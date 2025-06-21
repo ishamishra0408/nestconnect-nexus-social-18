@@ -1,63 +1,69 @@
 
 import { Message, User } from "@/types";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { users } from "@/lib/data";
-import { useAuth } from "@/context/AuthContext";
-import { useMessages } from "@/context/MessageContext";
 import { formatDistanceToNow } from "date-fns";
-import { Trash } from "lucide-react";
 
 interface MessageItemProps {
   message: Message;
+  currentUser: User;
+  users: User[];
+  onMarkAsRead?: (messageId: string) => void;
 }
 
-export function MessageItem({ message }: MessageItemProps) {
-  const { currentUser } = useAuth();
-  const { deleteMessage } = useMessages();
+export function MessageItem({ message, currentUser, users, onMarkAsRead }: MessageItemProps) {
+  const sender = users.find(u => u.id === message.sender_id);
+  const recipient = message.recipient_id ? users.find(u => u.id === message.recipient_id) : null;
   
-  const sender: User | undefined = users.find(u => u.id === message.senderId);
+  const isOwnMessage = message.sender_id === currentUser.id;
+  const isPrivateMessage = message.is_private;
   
-  if (!sender || !currentUser) return null;
-  
-  const isOwnMessage = message.senderId === currentUser.id;
-  
-  const formattedTime = formatDistanceToNow(new Date(message.timestamp), { addSuffix: true });
-  
+  const handleMarkAsRead = () => {
+    if (!message.is_read && !isOwnMessage && onMarkAsRead) {
+      onMarkAsRead(message.id);
+    }
+  };
+
+  const timeAgo = formatDistanceToNow(new Date(message.created_at), { addSuffix: true });
+
   return (
-    <Card className={`animate-fade-in w-full ${
-      isOwnMessage ? "bg-nestconnect-blue" : "bg-white"
-    }`}>
-      <CardContent className="py-4">
-        <div className="flex items-start gap-3">
-          <img
-            src={sender.avatar}
-            alt={sender.name}
-            className="w-10 h-10 rounded-full"
-          />
-          <div className="flex-1">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <p className="font-medium">{sender.name}</p>
-                <span className="text-xs text-gray-500">
-                  {formattedTime}
+    <div 
+      className={`p-4 border rounded-lg ${
+        !message.is_read && !isOwnMessage ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'
+      }`}
+      onClick={handleMarkAsRead}
+    >
+      <div className="flex items-start space-x-3">
+        <img
+          src={sender?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${message.sender_id}`}
+          alt={sender?.name || 'Unknown User'}
+          className="h-10 w-10 rounded-full"
+        />
+        <div className="flex-1">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <span className="font-medium text-gray-900">{sender?.name || 'Unknown User'}</span>
+              {isPrivateMessage && recipient && (
+                <span className="text-sm text-gray-500">
+                  → {message.recipient_id === currentUser.id ? 'You' : recipient.name}
                 </span>
-              </div>
-              {(isOwnMessage || message.recipientId === currentUser.id) && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => deleteMessage(message.id)}
-                  className="h-8 w-8 p-0"
-                >
-                  <Trash className="h-4 w-4" />
-                </Button>
+              )}
+              {isPrivateMessage && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                  Private
+                </span>
               )}
             </div>
-            <p className="mt-1 text-gray-700 whitespace-pre-wrap">{message.text}</p>
+            <span className="text-sm text-gray-500">{timeAgo}</span>
           </div>
+          <p className="mt-1 text-gray-700">{message.text}</p>
+          {!message.is_read && !isOwnMessage && (
+            <div className="mt-2">
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                Unread
+              </span>
+            </div>
+          )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

@@ -8,25 +8,30 @@ import { UserList } from "@/components/friends/UserList";
 import { useFriends } from "@/context/FriendContext";
 import { useUsers } from "@/hooks/useUsers";
 import { useState, useEffect } from "react";
+import { User } from "@/types";
 
 const Friends = () => {
-  const { getPendingRequests } = useFriends();
+  const { getFriends, getPendingRequests } = useFriends();
   const { users } = useUsers();
-  const [friends, setFriends] = useState([]);
-  const [pendingRequests, setPendingRequests] = useState([]);
+  const [friends, setFriends] = useState<User[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<{ request: any; user: User }[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
-      const [friendsData, requestsData] = await Promise.all([
-        useFriends().getFriends(),
-        getPendingRequests()
-      ]);
-      setFriends(friendsData);
-      setPendingRequests(requestsData);
+      try {
+        const [friendsData, requestsData] = await Promise.all([
+          getFriends(),
+          getPendingRequests()
+        ]);
+        setFriends(friendsData);
+        setPendingRequests(requestsData);
+      } catch (error) {
+        console.error('Error loading friends data:', error);
+      }
     };
     
     loadData();
-  }, []);
+  }, [getFriends, getPendingRequests]);
 
   return (
     <MainLayout>
