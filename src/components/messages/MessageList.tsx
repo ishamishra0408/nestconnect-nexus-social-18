@@ -6,9 +6,10 @@ import { useUsers } from "@/hooks/useUsers";
 interface MessageListProps {
   messages: Message[];
   emptyMessage?: string;
+  onMarkAsRead?: (messageId: string) => void;
 }
 
-export function MessageList({ messages, emptyMessage = "No messages yet" }: MessageListProps) {
+export function MessageList({ messages, emptyMessage = "No messages yet", onMarkAsRead }: MessageListProps) {
   const { currentUser } = useAuth();
   const { users } = useUsers();
 
@@ -35,6 +36,7 @@ export function MessageList({ messages, emptyMessage = "No messages yet" }: Mess
           key={message.id} 
           message={message} 
           currentUser={currentUser}
+          onMarkAsRead={onMarkAsRead}
         />
       ))}
     </div>

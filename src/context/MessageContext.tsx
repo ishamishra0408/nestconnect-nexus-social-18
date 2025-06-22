@@ -12,6 +12,7 @@ export interface MessageContextType {
   getPublicMessages: () => Message[];
   getPrivateMessagesByUser: (userId: string) => Message[];
   refreshMessages: () => Promise<void>;
+  markMessageAsRead: (messageId: string) => Promise<void>;
 }
 
 export const MessageContext = createContext<MessageContextType | undefined>(undefined);
@@ -128,6 +129,33 @@ export function MessageProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const markMessageAsRead = async (messageId: string) => {
+    if (!currentUser) return;
+
+    const message = messages.find(m => m.id === messageId);
+    if (!message || message.is_read) return;
+
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .update({ is_read: true })
+        .eq('id', messageId);
+
+      if (error) throw error;
+
+      setMessages(prev => 
+        prev.map(m => m.id === messageId ? { ...m, is_read: true } : m)
+      );
+    } catch (error) {
+      console.error('Error marking message as read:', error);
+      toast({
+        title: "Error",
+        description: "Failed to mark message as read",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getPublicMessages = () => {
     return messages.filter(message => !message.is_private);
   };
@@ -151,7 +179,8 @@ export function MessageProvider({ children }: { children: ReactNode }) {
       deleteMessage, 
       getPublicMessages, 
       getPrivateMessagesByUser,
-      refreshMessages
+      refreshMessages,
+      markMessageAsRead
     }}>
       {children}
     </MessageContext.Provider>

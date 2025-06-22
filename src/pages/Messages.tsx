@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
 const Messages = () => {
-  const { getPublicMessages, getPrivateMessagesByUser } = useMessages();
+  const { getPublicMessages, getPrivateMessagesByUser, markMessageAsRead } = useMessages();
   const { getFriends } = useFriends();
   
   const publicMessages = getPublicMessages();
@@ -54,7 +54,11 @@ const Messages = () => {
               <CardContent className="space-y-6">
                 <MessageComposer />
                 <div className="mt-6">
-                  <MessageList messages={publicMessages} emptyMessage="No public messages yet. Be the first to post!" />
+                  <MessageList 
+                    messages={publicMessages} 
+                    emptyMessage="No public messages yet. Be the first to post!"
+                    onMarkAsRead={markMessageAsRead} 
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -115,6 +119,7 @@ const Messages = () => {
                         <MessageList 
                           messages={privateMessages} 
                           emptyMessage={`No messages yet with ${selectedFriend.name}`} 
+                          onMarkAsRead={markMessageAsRead}
                         />
                       </div>
                       <div className="mt-6">

@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 const Home = () => {
   const { currentUser } = useAuth();
-  const { getPublicMessages } = useMessages();
+  const { getPublicMessages, markMessageAsRead } = useMessages();
   
   const publicMessages = getPublicMessages();
 
@@ -27,7 +27,11 @@ const Home = () => {
           <CardContent className="space-y-6">
             <MessageComposer />
             <div className="mt-6">
-              <MessageList messages={publicMessages} emptyMessage="No public messages yet. Be the first to post!" />
+              <MessageList 
+                messages={publicMessages} 
+                emptyMessage="No public messages yet. Be the first to post!"
+                onMarkAsRead={markMessageAsRead}
+              />
             </div>
           </CardContent>
         </Card>

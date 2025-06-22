@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const PrivateChat = () => {
   const { userId } = useParams();
-  const { getPrivateMessagesByUser } = useMessages();
+  const { getPrivateMessagesByUser, markMessageAsRead } = useMessages();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   
@@ -83,6 +83,7 @@ const PrivateChat = () => {
             <MessageList 
               messages={privateMessages} 
               emptyMessage={`No messages yet with ${user.name}. Start the conversation!`} 
+              onMarkAsRead={markMessageAsRead}
             />
             <div className="mt-6">
               <MessageComposer recipientId={user.id} isPrivate={true} />
